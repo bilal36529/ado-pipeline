@@ -63,12 +63,10 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
                     className="search-field"
                 />
             </div>
-            <PrimaryButton
-                text="Cancel Selected"
-                onClick={cancelSelected}
-                disabled={selectedIds.length === 0}
-                className="cancel-button"
-            />
+            <div className="status-summary">
+                <strong>Running: </strong>{runs.filter(run => run.status === 'running').length}
+                <strong> Queued: </strong>{runs.filter(run => run.status === 'queued').length}
+            </div>
             <DetailsList
                 items={filteredRuns}
                 columns={columns}
@@ -77,10 +75,12 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
                 onRenderRow={undefined}
                 className="details-list"
             />
-            <div className="status-summary">
-                <strong>Running: </strong>{runs.filter(run => run.status === 'running').length}
-                <strong> Queued: </strong>{runs.filter(run => run.status === 'queued').length}
-            </div>
+            <PrimaryButton
+                text="Cancel Selected"
+                onClick={cancelSelected}
+                disabled={selectedIds.length === 0}
+                className="cancel-button"
+            />
         </div>
     );
 };
