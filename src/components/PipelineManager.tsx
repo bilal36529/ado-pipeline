@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TextField, Checkbox, PrimaryButton, DetailsList, IColumn, DetailsListLayoutMode } from '@fluentui/react';
+import { TextField, Checkbox, PrimaryButton, DetailsList, IColumn, DetailsListLayoutMode, Dropdown, IDropdownOption } from '@fluentui/react';
 import { fetchPipelineRuns } from '../apiservice';
 import './PipelineManager.css'; // Add this for custom styling
 
@@ -13,6 +13,8 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
     const [runs, setRuns] = useState<PipelineRun[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isAscending, setIsAscending] = useState(true); // State for sorting by ID
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // State for selected status
 
     useEffect(() => {
         const getRuns = async () => {
@@ -22,9 +24,23 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
         getRuns();
     }, [definitionId]);
 
+    // Toggle sorting order between ascending and descending (for ID sorting)
+    const toggleSortOrder = () => {
+        setIsAscending(!isAscending);
+    };
+
+    // Handle status change from the dropdown
+    const handleStatusChange = (event: React.FormEvent<HTMLDivElement>, option?: IDropdownOption) => {
+        setSelectedStatus(option ? option.key as string : null);
+    };
+
+    // Filtering runs based on search term and selected status
     const filteredRuns = runs
-    ?.filter(run => run.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => a.id - b.id); // Sort by Id
+        ?.filter(run => 
+            run.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            (selectedStatus ? run.status.toLowerCase() === selectedStatus.toLowerCase() : true)
+        )
+        .sort((a, b) => (isAscending ? a.id - b.id : b.id - a.id)); // Sort by ID
 
     const columns: IColumn[] = [
         {
@@ -55,6 +71,13 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
         console.log("Canceling runs with IDs:", selectedIds);
     };
 
+    // Dropdown options for filtering by status
+    const statusOptions: IDropdownOption[] = [
+        { key: 'running', text: 'Running' },
+        { key: 'queued', text: 'Queued' },
+        { key: 'in build', text: 'In build' },
+    ];
+
     return (
         <div className="pipeline-container">
             <div className="search-container">
@@ -68,6 +91,23 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
             <div className="status-summary">
                 <strong>Running: </strong>{runs.filter(run => run.status === 'running').length}
                 <strong> Queued: </strong>{runs.filter(run => run.status === 'queued').length}
+            </div>
+            <div className='button-container'>
+             <div className="sorting-dropdown">
+                <Dropdown
+                    placeholder="Filter by Status"
+                    options={statusOptions}
+                    onChange={handleStatusChange}
+                    className="status-dropdown"
+                />
+             </div>
+             <div className="sorting-buttons">
+                <PrimaryButton
+                    text={isAscending ? "Sort by ID Descending" : "Sort by ID Ascending"}
+                    onClick={toggleSortOrder} // Toggle sorting by ID
+                    className="sort-button"
+                />
+             </div>
             </div>
             <DetailsList
                 items={filteredRuns}

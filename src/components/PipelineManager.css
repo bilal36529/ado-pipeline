@@ -74,3 +74,20 @@
         font-size: 14px;
     }
 }
+
+.sort-button {
+    margin-bottom: 10px;
+    background-color: green;
+    color: white;
+}
+
+.status-dropdown {
+    margin-bottom: 10px;
+    width: 200px;
+}
+
+.button-container{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
