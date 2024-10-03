@@ -22,7 +22,9 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({ definitionId }) =
         getRuns();
     }, [definitionId]);
 
-    const filteredRuns = runs?.filter(run => run.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredRuns = runs
+    ?.filter(run => run.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.id - b.id); // Sort by Id
 
     const columns: IColumn[] = [
         {
