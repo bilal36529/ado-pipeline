@@ -9,19 +9,37 @@ import {
   Dropdown,
   IDropdownOption,
   IconButton,
-  DetailsHeader,
-  IDetailsHeaderProps,
-  IRenderFunction,
 } from "@fluentui/react";
 import { fetchPipelineRuns } from "../apiservice";
 import "./PipelineManager.css"; // Add this for custom styling
 import { FaArrowUp } from "react-icons/fa";
 
+// Updated PipelineRun interface based on new API structure
 interface PipelineRun {
   id: number;
-  name: string;
-  status?: string;
-  url: string;
+  buildNumber: string;
+  status: string; // The status of the pipeline run (e.g., "inProgress")
+  startTime: string; // The start time of the pipeline run
+  queueTime: string; // The queue time of the pipeline run
+  sourceBranch: string; // The source branch
+  definition: {
+    id: number;
+    name: string;
+    url: string;
+  };
+  repository: {
+    id: string;
+    name: string;
+    url: string;
+  };
+  requestedFor: {
+    displayName: string;
+    url: string;
+  };
+  logs: {
+    url: string;
+  };
+  url: string; // The URL to access the pipeline run
   _links: {
     self: {
       href: string;
@@ -31,7 +49,6 @@ interface PipelineRun {
     };
   };
 }
-
 const PipelineManager: React.FC<{ definitionId: number }> = ({
   definitionId,
 }) => {
@@ -63,13 +80,13 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
   const filteredRuns = runs
     ?.filter(
       (run) =>
-        run.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        run.buildNumber.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (selectedStatus ? run.status?.toLowerCase() === selectedStatus.toLowerCase() : true)
     )
     .sort((a, b) => {
       return isAscending
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name);
+        ? a.buildNumber.localeCompare(b.buildNumber)
+        : b.buildNumber.localeCompare(a.buildNumber);
     });
 
   const equalColumnWidth = 200;
@@ -96,30 +113,33 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
     },
     {
       key: "column2",
-      name: "Pipeline Name", // Keep name as a string
-      fieldName: "name",
+      name: "Build Name",
+      fieldName: "definition.name", // Updated to include Build Name
       minWidth: equalColumnWidth,
       maxWidth: equalColumnWidth,
-      onRenderHeader: (props, defaultRender) => (
-        <div style={{ display: "flex", alignItems: "center" , gap: "5px"}} >
-          <span>Pipeline Name</span>
+      onRender: (item: PipelineRun) => (
+        <span>{item.definition.name}</span> // Render the build name
+      ),
+    },
+    {
+      key: "column3",
+      name: "Build Number",
+      fieldName: "buildNumber",
+      minWidth: equalColumnWidth,
+      maxWidth: equalColumnWidth,
+      onRenderHeader: () => (
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <span>Build Number</span>
           <div onClick={toggleSortOrder}>
-          <FaArrowUp />
+            <FaArrowUp />
           </div>
         </div>
       ),
     },
     {
-      key: "column3",
+      key: "column4",
       name: "Pipeline ID",
       fieldName: "id",
-      minWidth: equalColumnWidth,
-      maxWidth: equalColumnWidth,
-    },
-    {
-      key: "column4",
-      name: "Run ID",
-      fieldName: "revision",
       minWidth: equalColumnWidth,
       maxWidth: equalColumnWidth,
     },
@@ -157,31 +177,34 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
       ),
     },
   ];
+  
 
   const cancelSelected = () => {
     console.log("Canceling runs with IDs:", selectedIds);
   };
 
   const statusOptions: IDropdownOption[] = [
-    { key: "running", text: "Running" },
-    { key: "queued", text: "Queued" },
+    { key: "inProgress", text: "In Progress" },
+    { key: "completed", text: "Completed" },
   ];
 
   return (
     <div className="pipeline-container">
       <div className="search-container">
         <TextField
-          label="Search by name"
+          label="Search by Build Number"
           value={searchTerm}
           onChange={(_, newValue) => setSearchTerm(newValue || "")}
           className="search-field"
         />
       </div>
       <div className="status-summary">
-        <strong>Running: </strong>
-        {runs.filter((run) => run.status === "running").length}
-        <strong> Queued: </strong>
-        {runs.filter((run) => run.status === "queued").length}
+        <strong>In Progress: </strong>
+        {runs.filter((run) => run.status === "inProgress").length}
+        <strong> Completed: </strong>
+        {runs.filter((run) => run.status === "completed").length}
+        <strong> All: </strong>
+        {runs.length}
       </div>
       <div className="button-container">
         <div className="sorting-dropdown">
