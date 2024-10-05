@@ -8,14 +8,19 @@ import {
   DetailsListLayoutMode,
   Dropdown,
   IDropdownOption,
+  IconButton,
+  DetailsHeader,
+  IDetailsHeaderProps,
+  IRenderFunction,
 } from "@fluentui/react";
 import { fetchPipelineRuns } from "../apiservice";
 import "./PipelineManager.css"; // Add this for custom styling
+import { FaArrowUp } from "react-icons/fa";
 
 interface PipelineRun {
   id: number;
   name: string;
-  status?: string; // This field should be populated based on your logic
+  status?: string;
   url: string;
   _links: {
     self: {
@@ -44,15 +49,15 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
     getRuns();
   }, [definitionId]);
 
-  const toggleSortOrder = () => {
-    setIsAscending(!isAscending);
-  };
-
   const handleStatusChange = (
     event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
     setSelectedStatus(option ? (option.key as string) : null);
+  };
+
+  const toggleSortOrder = () => {
+    setIsAscending(!isAscending);
   };
 
   const filteredRuns = runs
@@ -61,7 +66,11 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
         run.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (selectedStatus ? run.status?.toLowerCase() === selectedStatus.toLowerCase() : true)
     )
-    .sort((a, b) => (isAscending ? a.id - b.id : b.id - a.id));
+    .sort((a, b) => {
+      return isAscending
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
+    });
 
   const equalColumnWidth = 200;
 
@@ -87,10 +96,18 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
     },
     {
       key: "column2",
-      name: "Pipeline Name",
+      name: "Pipeline Name", // Keep name as a string
       fieldName: "name",
       minWidth: equalColumnWidth,
       maxWidth: equalColumnWidth,
+      onRenderHeader: (props, defaultRender) => (
+        <div style={{ display: "flex", alignItems: "center" , gap: "5px"}} >
+          <span>Pipeline Name</span>
+          <div onClick={toggleSortOrder}>
+          <FaArrowUp />
+          </div>
+        </div>
+      ),
     },
     {
       key: "column3",
@@ -114,19 +131,19 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
       maxWidth: equalColumnWidth,
     },
     {
-        key: "column5",
-        name: "Queue Time",
-        fieldName: "status",
-        minWidth: equalColumnWidth,
-        maxWidth: equalColumnWidth,
-      },
-      {
-        key: "column5",
-        name: "Start Time",
-        fieldName: "status",
-        minWidth: equalColumnWidth,
-        maxWidth: equalColumnWidth,
-      },
+      key: "column6",
+      name: "Queue Time",
+      fieldName: "queueTime",
+      minWidth: equalColumnWidth,
+      maxWidth: equalColumnWidth,
+    },
+    {
+      key: "column7",
+      name: "Start Time",
+      fieldName: "startTime",
+      minWidth: equalColumnWidth,
+      maxWidth: equalColumnWidth,
+    },
     {
       key: "column8",
       name: "Link",
@@ -134,8 +151,10 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
       minWidth: equalColumnWidth,
       maxWidth: equalColumnWidth,
       onRender: (item: PipelineRun) => (
-        <a href={item._links.web.href} target="_blank" rel="noopener noreferrer">View Pipeline</a>
-      )
+        <a href={item._links.web.href} target="_blank" rel="noopener noreferrer">
+          View Pipeline
+        </a>
+      ),
     },
   ];
 
@@ -171,13 +190,6 @@ const PipelineManager: React.FC<{ definitionId: number }> = ({
             options={statusOptions}
             onChange={handleStatusChange}
             className="status-dropdown"
-          />
-        </div>
-        <div className="sorting-buttons">
-          <PrimaryButton
-            text={isAscending ? "Sort by ID Descending" : "Sort by ID Ascending"}
-            onClick={toggleSortOrder}
-            className="sort-button"
           />
         </div>
       </div>
